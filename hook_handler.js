@@ -8,6 +8,8 @@ const config = {
   },
   app: {
     twitter_endpoint: `https://api.twitter.com/1.1/direct_messages/events/new.json`,
+    consumer_key: process.env.TWITTER_CONSUMER_KEY,
+    consumer_secret: process.env.TWITTER_CONSUMER_SECRET
   }
 };
 

@@ -2,7 +2,20 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Twitter webhook consumer",
-
+  "Parameters" : {
+    "TWITTERCONSUMERKEY": {
+      "NoEcho": "true",
+      "Type": "String",
+      "Default": "",
+      "Description": "Consumer key for Twitter application"
+    },
+    "TWITTERCONSUMERSECRET": {
+      "NoEcho": "true",
+      "Type": "String",
+      "Default": "",
+      "Description": "Consumer secret for Twitter application"
+    }
+  },
   "Resources": {
 
     "TwitterWebhookLambda": {
@@ -23,6 +36,16 @@
         "FunctionName": "twitterWebhook",
         "Handler": "index.twitterWebhook",
         "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"]},
+        "Environment": {
+          "Variables": {
+            "TWITTER_CONSUMER_SECRET": {
+              "Ref": "TWITTERCONSUMERSECRET"
+            },
+            "TWITTER_CONSUMER_KEY": {
+              "Ref": "TWITTERCONSUMERKEY"
+            }            
+          }
+        },
         "Runtime": "nodejs6.10"
       }
     },

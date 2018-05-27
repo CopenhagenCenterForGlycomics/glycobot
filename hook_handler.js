@@ -13,12 +13,12 @@ const config = {
 
 /**
  * Webhook handler for incoming Twitter DMs
- * @function twitterDMWebhook
+ * @function twitterWebhook
  * @param {Object} event - AWS Lambda event object
  * @param {Object} context - AWS Lambda context object
  * @param {Function} callback - Callback
  */
-module.exports.twitterDMWebhook = (event, context, callback) => {
+module.exports.twitterWebhook = (event, context, callback) => {
   if (event.method === 'GET') {
     let crcToken = event.query['crc_token'];
     if (crcToken) {

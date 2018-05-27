@@ -1,0 +1,174 @@
+
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Twitter webhook consumer",
+
+  "Resources": {
+
+    "TwitterWebhookLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "ZipFile": { "Fn::Join": ["\n", [
+            "'use strict';",
+            "",
+            "exports.twitterWebhook = (event, context, callback) => {",
+            "  console.log('Event:', JSON.stringify(event));",
+            "  const response = {};",
+            "  callback(null, response);",
+            "};"
+          ]]}
+        },
+        "Description": "Twitter webhook consumer",
+        "FunctionName": "twitterWebhook",
+        "Handler": "index.twitterWebhook",
+        "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"]},
+        "Runtime": "nodejs6.10"
+      }
+    },
+
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": ["lambda.amazonaws.com"] },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
+      }
+    },
+
+    "WebhookApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "Twitter Webhook API",
+        "Description": "Twitter webhook API",
+        "FailOnWarnings": true
+      }
+    },
+
+    "LambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:invokeFunction",
+        "FunctionName": {"Fn::GetAtt": ["TwitterWebhookLambda", "Arn"]},
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {"Fn::Join": ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "WebhookApi"}, "/*"]]}
+      }
+    },
+
+    "ApiGatewayCloudWatchLogsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": ["apigateway.amazonaws.com"] },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "Policies": [{
+          "PolicyName": "ApiGatewayLogsPolicy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+                "logs:GetLogEvents",
+                "logs:FilterLogEvents"
+              ],
+              "Resource": "*"
+            }]
+          }
+        }]
+      }
+    },
+
+    "ApiGatewayAccount": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": {"Fn::GetAtt": ["ApiGatewayCloudWatchLogsRole", "Arn"] }
+      }
+    },
+
+    "WebhookApiStage": {
+      "DependsOn": ["ApiGatewayAccount"],
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "DeploymentId": {"Ref": "ApiDeployment"},
+        "MethodSettings": [{
+          "DataTraceEnabled": true,
+          "HttpMethod": "*",
+          "LoggingLevel": "INFO",
+          "ResourcePath": "/*"
+        }],
+        "RestApiId": {"Ref": "WebhookApi"},
+        "StageName": "LATEST",
+        "Variables": {
+        }
+      }
+    },
+
+    "ApiDeployment": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "DependsOn": ["TwitterRequestALL"],
+      "Properties": {
+        "RestApiId": {"Ref": "WebhookApi"},
+        "StageName": "DummyStage"
+      }
+    },
+
+    "WebhookResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": {"Ref": "WebhookApi"},
+        "ParentId": {"Fn::GetAtt": ["WebhookApi", "RootResourceId"]},
+        "PathPart": "twitter"
+      }
+    },
+
+    "TwitterRequestALL": {
+      "DependsOn": "LambdaPermission",
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "ANY",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": {"Fn::Join": ["",
+            ["arn:aws:apigateway:", {"Ref": "AWS::Region"}, ":lambda:path/2015-03-31/functions/", {"Fn::GetAtt": ["TwitterWebhookLambda", "Arn"]}, "/invocations"]
+          ]},
+          "IntegrationResponses": [{
+            "StatusCode": 200,
+            "ResponseTemplates": {}
+          }],
+          "PassthroughBehavior": "WHEN_NO_MATCH"
+        },
+        "RequestParameters": {},
+        "ResourceId": {"Ref": "WebhookResource"},
+        "RestApiId": {"Ref": "WebhookApi"},
+        "MethodResponses": [{
+          "StatusCode": 200
+        }]
+      }
+    }
+  },
+
+  "Outputs": {
+    "RootUrl": {
+      "Description": "Root URL of the API gateway",
+      "Value": {"Fn::Join": ["", ["https://", {"Ref": "WebhookApi"}, ".execute-api.", {"Ref": "AWS::Region"}, ".amazonaws.com"]]}
+    }
+  }
+}

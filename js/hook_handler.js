@@ -21,13 +21,22 @@ const config = {
  * @param {Function} callback - Callback
  */
 module.exports.hook = (event, context, callback) => {
-  if (event.method === 'GET') {
-    let crcToken = event.query['crc_token'];
+  if (event.httpMethod === 'GET') {
+    let crcToken = event.queryStringParameters['crc_token'];
     if (crcToken) {
       twitter(config).crcResponse(crcToken)
-        .then((response) => callback(response));
+        .then( response => {
+          callback(null,{
+            isBase64Encoded: false,
+            statusCode: 200,
+            headers: {},
+            body: JSON.stringify(response),
+          });
+        })
+        .catch( err => { console.log(err); throw(err); });
     } else {
       const response = {
+        isBase64Encoded: false,
         statusCode: 400,
         headers: {
           'Access-Control-Allow-Origin': '*', // Required for CORS
@@ -38,7 +47,8 @@ module.exports.hook = (event, context, callback) => {
       };
       callback(null, response);
     }
-  } else if (event.method === 'POST') {
+  } else if (event.httpMethod === 'POST') {
+    console.log('Got POST');
     console.log(event);
     callback(null);
   }

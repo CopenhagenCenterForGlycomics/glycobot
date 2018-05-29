@@ -10,10 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "compromise": "^11.9.0",
     "request": "^2.85.0"
   },
   "bundledDependencies": [
-      "request"
+    "request"
   ],
   "devDependencies": {
     "pack-lambda": "^1.0.0"

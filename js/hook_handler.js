@@ -1,6 +1,8 @@
 // Function for sending twitter DMs
 const twitter = require('./twitter');
 
+const glycobot = require('./glycobot');
+
 const config = {
   oauth: {
     consumer_key: process.env.TWITTER_CONSUMER_KEY,

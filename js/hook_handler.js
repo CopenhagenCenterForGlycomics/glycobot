@@ -48,8 +48,15 @@ module.exports.hook = (event, context, callback) => {
       callback(null, response);
     }
   } else if (event.httpMethod === 'POST') {
-    console.log('Got POST');
-    console.log(event);
-    callback(null);
+    let signature = event.headers['X-Twitter-Webhooks-Signature'] || event.headers['x-twitter-webhooks-signature'];
+    twitter(config).crcResponse(event.body).then( resp => {
+      if ( signature === resp.response_token ) {
+        return JSON.parse(event.body);
+      }
+      throw new Error('Invalid CRC');
+    }).then( twitter_event => {
+      console.log(twitter_event);
+      callback(null);
+    }).catch( err => callback );
   }
 };

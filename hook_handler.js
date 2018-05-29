@@ -20,7 +20,7 @@ const config = {
  * @param {Object} context - AWS Lambda context object
  * @param {Function} callback - Callback
  */
-module.exports.twitterWebhook = (event, context, callback) => {
+module.exports.hook = (event, context, callback) => {
   if (event.method === 'GET') {
     let crcToken = event.query['crc_token'];
     if (crcToken) {

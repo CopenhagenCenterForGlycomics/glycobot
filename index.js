@@ -1,4 +1,4 @@
-const twitter = require('./hook_handler');
+const twitter = require('./js/hook_handler');
 
 module.exports = {};
 

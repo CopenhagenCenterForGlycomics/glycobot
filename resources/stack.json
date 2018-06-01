@@ -14,6 +14,24 @@
       "Type": "String",
       "Default": "",
       "Description": "Consumer secret for Twitter application"
+    },
+    "TWITTERACCESSTOKEN": {
+      "NoEcho": "true",
+      "Type": "String",
+      "Default": "",
+      "Description": "Access Token for Twitter application"
+    },
+    "TWITTERACCESSTOKENSECRET": {
+      "NoEcho": "true",
+      "Type": "String",
+      "Default": "",
+      "Description": "Access token secret Twitter application"
+    },
+    "GATORAPIKEY" : {
+      "NoEcho": "true",
+      "Type": "String",
+      "Default": "",
+      "Description": "GATOR API key"      
     }
   },
   "Resources": {
@@ -43,7 +61,16 @@
             },
             "TWITTER_CONSUMER_KEY": {
               "Ref": "TWITTERCONSUMERKEY"
-            }            
+            },
+            "TWITTER_ACCESS_TOKEN_SECRET": {
+              "Ref": "TWITTERACCESSTOKENSECRET"
+            },
+            "TWITTER_ACCESS_TOKEN": {
+              "Ref": "TWITTERACCESSTOKEN"
+            },
+            "GATOR_API_KEY" : {
+              "Ref" : "GATORAPIKEY"
+            }
           }
         },
         "Runtime": "nodejs6.10"

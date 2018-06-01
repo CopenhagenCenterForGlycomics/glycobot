@@ -15,7 +15,9 @@
     "request": "^2.85.0"
   },
   "bundledDependencies": [
-    "request"
+    "request",
+    "node-fetch",
+    "compromise"
   ],
   "devDependencies": {
     "pack-lambda": "^1.0.0"

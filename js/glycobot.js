@@ -1,13 +1,138 @@
 const nlp = require('compromise');
 
-const understand_query = (text) => {
-  let parsed = nlp(text);
-  let verb_length = parsed.verbs().length;
-  if (verb_length < 1) {
-    return [text.trim()];
-  } else {
-    return parsed.nouns().map( n => n.out('text').trim() );
+const fs = require('fs');
+const zlib = require('zlib');
+const readline = require('readline');
+const getData = require('./gator');
+
+const summarise_msdata = (msdatas) => {
+  let compositions = [];
+  let sources = [];
+  let idxes = [];
+  for (let msdata of msdatas) {
+    let a_comp = '';
+    msdata.data.forEach( pep => {
+      for (let site of pep.sites) {
+        if (site[1].match(/Hex/)) {
+          if (idxes.indexOf(site[0]) < 0) {
+            idxes.push(site[0]);
+          }
+        }
+        if (compositions.indexOf(site[1]) < 0) {
+          a_comp = site[1];
+          compositions.push(site[1]);
+        }
+      }
+      let all_comp = (pep.composition || [''])[0].replace(/\d+x/,'');
+      if (all_comp && compositions.indexOf(all_comp) < 0) {
+        compositions.push(all_comp);
+        a_comp = all_comp;
+      }
+    });
+    if (! a_comp.match(/Hex|GlcNAc/)) {
+      continue;
+    }
+    let source = null;
+    let sample = msdata.metadata.sample;
+    if (sample) {
+      if (sample.description) {
+        source = sample.description;
+      }
+      if (sample.cell_type) {
+        source = sample.cell_type + ' ('+source+')';
+      }
+    }
+    if (sources.indexOf(source) < 0) {
+      sources.push(source);
+    }
+
   }
+  compositions = compositions.filter( comp => comp.match(/Hex|GlcNAc/));
+  let is_sugar = compositions.length > 0;
+  return { composition: compositions, sources: sources, sites: idxes };
+};
+
+
+let plugin = {
+  tags:{
+    Gene:{
+      isA: 'Noun'
+    },
+    GeneFamily:{
+      isA: 'Noun'
+    }
+  },
+  words:{
+  }
+};
+
+let symbol_data = {};
+
+let family_data = {};
+
+let symbreader = readline.createInterface({
+  input: fs.createReadStream('./HGNC_06_2018.tsv.gz').pipe(zlib.createGunzip())
+});
+let count = 0;
+
+symbreader.on('line', (line) => {
+  let [symb,name,fam,uniprot] = line.split('\t');
+
+  if ( ! uniprot ) {
+    return;
+  }
+
+  symb = symb.toLowerCase();
+  name = name.replace(/\s+(\d+)/g,"$1").toLowerCase();
+  fam = fam.replace(/\|.*/,'').toLowerCase();
+  plugin.words[symb] = 'Gene';
+  plugin.words[name] = 'Gene';
+  plugin.words[fam] = 'GeneFamily';
+  if ( ! symbol_data[symb]) {
+    symbol_data[symb] = {};
+  }
+  symbol_data[name] = symbol_data[symb];
+  symbol_data[name].uniprot = uniprot;
+  if ( ! family_data[fam]) {
+    family_data[fam] = [];
+  }
+  family_data[fam].push(symb);
+});
+
+let has_symbols = new Promise( resolve => {
+  symbreader.on('close', resolve);
+});
+
+Promise.all([has_symbols]).then( () => {
+  nlp.plugin(plugin);
+  let all_ids = [];
+  for (let string of test_strings) {
+    let ids = understand_query(string);
+    all_ids = all_ids.concat(ids);
+  }
+  all_ids = all_ids.filter( (o,i,a) => a.indexOf(o) === i );
+  getData(all_ids).then( res => {
+    for (let prot of res) {
+      let msdatas = prot.data.filter( dat => (dat.metadata || {}).mimetype == 'application/json+msdata');
+      console.log(summarise_msdata(msdatas));
+    }
+  });
+
+});
+
+const understand_query = (text) => {
+  text = text.replace(/\s+(\d+)/g,"$1");
+
+  let parsed = nlp(text);
+  let genes = parsed.match('#Gene');
+  let families = parsed.match('#GeneFamily');
+  if (genes.length > 0) {
+    return [ (symbol_data[ genes.out('text').trim().toLowerCase() ] || {}).uniprot ];
+  } else if (families.length > 0) {
+    let fam = families.out('text').trim().toLowerCase();
+    return family_data[fam].map( symb => (symbol_data[symb.toLowerCase()] || {}).uniprot );
+  }
+  return '';
 };
 
 const handle_tweets = () => {};
@@ -31,16 +156,17 @@ const handle_event = function(event) {
 
 const test_strings = [
   'is dag1 glycosylated?',
-  'is there anything on cadherins',
+  'is there anything on CELSR cadherins',
   'gene apoe',
   'cadherin 1',
   'CDH1',
-  'does NID1 have sugars?'
+  'does NID1 have sugars?',
+  'do nucleoporins have sugars?'
 ];
 
-for (let string of test_strings) {
-  console.log(understand_query(string));
-}
+// for (let string of test_strings) {
+//   console.log(understand_query(string));
+// }
 // console.log(doc.topics().data());
 
 module.exports = handle_event;

@@ -49,7 +49,7 @@ const summarise_msdata = (msdatas) => {
   }
   compositions = compositions.filter( comp => comp.match(/Hex|GlcNAc/));
   let is_sugar = compositions.length > 0;
-  return { composition: compositions, sources: sources, sites: idxes };
+  return { composition: compositions, sources: sources, sites: idxes, acc: msdatas[0].acc.toUpperCase() };
 };
 
 
@@ -101,23 +101,8 @@ symbreader.on('line', (line) => {
 
 let has_symbols = new Promise( resolve => {
   symbreader.on('close', resolve);
-});
-
-Promise.all([has_symbols]).then( () => {
+}).then( () => {
   nlp.plugin(plugin);
-  let all_ids = [];
-  for (let string of test_strings) {
-    let ids = understand_query(string);
-    all_ids = all_ids.concat(ids);
-  }
-  all_ids = all_ids.filter( (o,i,a) => a.indexOf(o) === i );
-  getData(all_ids).then( res => {
-    for (let prot of res) {
-      let msdatas = prot.data.filter( dat => (dat.metadata || {}).mimetype == 'application/json+msdata');
-      console.log(summarise_msdata(msdatas));
-    }
-  });
-
 });
 
 const understand_query = (text) => {
@@ -138,10 +123,21 @@ const understand_query = (text) => {
 const handle_tweets = () => {};
 
 const handle_dms = (dms) => {
-  for (let dm of dms) {
-    let text = dm.message_create.message_data.text;
-    let keywords = understand_query(text);
-  }
+  return has_symbols.then( () => {
+    let results = [];
+    return Promise.all( dms.map( dm => {
+      let text = dm.message_create.message_data.text;
+      let ids = understand_query(text).filter( (o,i,a) => a.indexOf(o) === i );
+      return getData(ids).then( res => {
+        let dm_result = { source: dm, type: 'dm', proteins: [] };
+        for (let prot of res) {
+          let msdatas = prot.data.filter( dat => (dat.metadata || {}).mimetype == 'application/json+msdata');
+          dm_result.proteins.push(summarise_msdata(msdatas));
+        }
+        return dm_result;
+      });
+    }));
+  });
 };
 
 
@@ -163,10 +159,5 @@ const test_strings = [
   'does NID1 have sugars?',
   'do nucleoporins have sugars?'
 ];
-
-// for (let string of test_strings) {
-//   console.log(understand_query(string));
-// }
-// console.log(doc.topics().data());
 
 module.exports = handle_event;

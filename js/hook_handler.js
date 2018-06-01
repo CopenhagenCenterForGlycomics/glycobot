@@ -1,12 +1,12 @@
 // Function for sending twitter DMs
 const twitter = require('./twitter');
 
-const glycobot = require('./glycobot');
+const glycobot_pipeline = require('./glycobot_pipeline');
 
 const config = {
   oauth: {
-    consumer_key: process.env.TWITTER_CONSUMER_KEY,
-    consumer_secret: process.env.TWITTER_CONSUMER_SECRET
+    token: process.env.TWITTER_ACCESS_TOKEN,
+    token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
   },
   app: {
     twitter_endpoint: `https://api.twitter.com/1.1/direct_messages/events/new.json`,
@@ -57,8 +57,9 @@ module.exports.hook = (event, context, callback) => {
       }
       throw new Error('Invalid CRC');
     }).then( twitter_event => {
-      console.log(twitter_event);
-      callback(null);
+      return glycobot_pipeline
+      .handle(twitter_event)
+      .then( res => callback(null,res) );
     }).catch( err => callback );
   }
 };

@@ -45,6 +45,42 @@ module.exports = function(config) {
     resolve(response);
   });
 
+  const dm_body = (message,parent) => JSON.parse(`{
+  "event": {
+    "type": "message_create",
+    "message_create": {
+      "target": {
+        "recipient_id": "${parent}"
+      },
+      "message_data": {
+        "text": "${message}",
+      }
+    }
+  }
+  }`);
+
+  const tweet_body = (message,parent) => JSON.parse(`{
+  "event": {
+    "type": "message_create",
+    "message_create": {
+      "target": {
+        "recipient_id": "${parent}"
+      },
+      "message_data": {
+        "text": "${message}",
+      }
+    }
+  }
+  }`);
+
+  methods.sendReplies = (responses) => {
+    for (let resp of responses) {
+      if (resp.type === 'dm') {
+        return methods.sendMessage(dm_body(resp.message,resp.source.message_create.sender_id));
+      }
+    }
+  };
+
   /**
    * Send direct Twitter message
    * @function sendMessage

@@ -32,6 +32,11 @@
       "Type": "String",
       "Default": "",
       "Description": "GATOR API key"      
+    },
+    "TWITTERSELFID" : {
+      "Type" : "String",
+      "Default" : "",
+      "Description" : "Own Twitter user id"
     }
   },
   "Resources": {
@@ -67,6 +72,9 @@
             },
             "TWITTER_ACCESS_TOKEN": {
               "Ref": "TWITTERACCESSTOKEN"
+            },
+            "TWITTER_SELF_ID" : {
+              "Ref": "TWITTERSELFID"
             },
             "GATOR_API_KEY" : {
               "Ref" : "GATORAPIKEY"

@@ -70,15 +70,17 @@ module.exports = function(config) {
   }`);
 
   methods.sendReplies = (responses) => {
+    let resp_promises = [];
     for (let resp of responses) {
       if (resp.type === 'dm') {
         if (resp.source.message_create.sender_id === process.env.TWITTER_SELF_ID) {
           console.log('Do not send to self');
           return;
         }
-        return methods.sendMessage(dm_body(resp.message,resp.source.message_create.sender_id));
+        resp_promises.push(methods.sendMessage(dm_body(resp.message,resp.source.message_create.sender_id)));
       }
     }
+    return Promise.all(resp_promises);
   };
 
   /**

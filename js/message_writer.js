@@ -35,7 +35,8 @@ const handle_protein = (id,prot) => {
 const handle_single = (response) => {
  if (response.type == 'dm') {
     if (response.error == 'NO_GENE') {
-      return 'I didn\'t recognise any gene names';
+      response.message = 'I didn\'t recognise any gene names';
+      return [ response ];
     }
     if (response.proteins.length > 1) {
       response.message = handle_family(response.proteins);
@@ -43,18 +44,21 @@ const handle_single = (response) => {
     }
     if (response.proteins.length == 1) {
       response.message = handle_protein(response.ids[0],response.proteins[0]);
-      gdv_link_resp = { source: response.source, message: `Full data at: https://glycodomain.glycomics.ku.dk/uniprot/${response.ids[0].uniprot}`}
+      gdv_link_resp = { type: 'dm', source: response.source, message: `Full data at: https://glycodomain.glycomics.ku.dk/uniprot/${response.ids[0].uniprot}`}
       return [ response, gdv_link_resp ];
     }
     if (response.proteins.length == 0) {
-      response.message = 'Protein not found';
+      response.message = 'I didn\'t recognise the gene or couldn\'t find a protein!';
       return [ response ];
     }
   }
 };
 
 const handle = (responses) => {
-  return responses.map( handle_single ).reduce( (a,v) => a.concat(v) );
+  let mapped_responses = responses.map( handle_single );
+  let all_responses = [].concat.apply([],mapped_responses);
+  console.log(all_responses);
+  return all_responses;
 };
 
 module.exports = handle;

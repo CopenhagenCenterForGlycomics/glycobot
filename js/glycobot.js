@@ -118,7 +118,7 @@ const understand_query = (text) => {
     let fam = families.out('text').trim().toLowerCase();
     return family_data[fam].map( symb => {return { uniprot: (symbol_data[symb.toLowerCase()] || {}).uniprot, symbol: symb.toUpperCase() }; });
   }
-  return '';
+  return [];
 };
 
 const handle_tweets = () => {};
@@ -129,6 +129,7 @@ const handle_dms = (dms) => {
     return Promise.all( dms.map( dm => {
       let text = dm.message_create.message_data.text;
       let ids = understand_query(text);
+      console.log('Understood',ids,'from query');
       let uniprots = ids.map( id => id.uniprot );
       ids = ids.filter( (o,i,a) => uniprots.indexOf(o.uniprot) === i );
 

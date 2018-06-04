@@ -112,10 +112,11 @@ const understand_query = (text) => {
   let genes = parsed.match('#Gene');
   let families = parsed.match('#GeneFamily');
   if (genes.length > 0) {
-    return [ (symbol_data[ genes.out('text').trim().toLowerCase() ] || {}).uniprot ];
+    let symbol = genes.out('text').trim().toLowerCase();
+    return [ (symbol_data[ symbol ] || {}).uniprot ].map( up => {return { uniprot: up, symbol: symbol.toUpperCase() }; });
   } else if (families.length > 0) {
     let fam = families.out('text').trim().toLowerCase();
-    return family_data[fam].map( symb => (symbol_data[symb.toLowerCase()] || {}).uniprot );
+    return family_data[fam].map( symb => {return { uniprot: (symbol_data[symb.toLowerCase()] || {}).uniprot, symbol: symb.toUpperCase() }; });
   }
   return '';
 };
@@ -127,9 +128,16 @@ const handle_dms = (dms) => {
     let results = [];
     return Promise.all( dms.map( dm => {
       let text = dm.message_create.message_data.text;
-      let ids = understand_query(text).filter( (o,i,a) => a.indexOf(o) === i );
-      return getData(ids).then( res => {
-        let dm_result = { source: dm, type: 'dm', proteins: [] };
+      let ids = understand_query(text);
+      let uniprots = ids.map( id => id.uniprot );
+      ids = ids.filter( (o,i,a) => uniprots.indexOf(o.uniprot) === i );
+
+      if (ids.length === 0) {
+        return Promise.resolve({ source: dm, type: 'dm', error: 'NO_GENE' });
+      }
+
+      return getData(ids.map( id => id.uniprot )).then( res => {
+        let dm_result = { source: dm, type: 'dm', proteins: [], ids: ids };
         for (let prot of res) {
           let msdatas = prot.data.filter( dat => (dat.metadata || {}).mimetype == 'application/json+msdata');
           dm_result.proteins.push(summarise_msdata(msdatas));

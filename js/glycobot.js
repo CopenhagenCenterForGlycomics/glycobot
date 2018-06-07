@@ -49,7 +49,7 @@ const summarise_msdata = (msdatas) => {
   }
   compositions = compositions.filter( comp => comp.match(/Hex|GlcNAc/));
   let is_sugar = compositions.length > 0;
-  return { composition: compositions, sources: sources, sites: idxes, acc: msdatas[0].acc.toUpperCase() };
+  return { composition: compositions, sources: sources, sites: idxes };
 };
 
 
@@ -139,16 +139,23 @@ const handle_dms = (dms) => {
 
       return getData(ids.map( id => id.uniprot )).then( res => {
         let dm_result = { source: dm, type: 'dm', proteins: [], ids: ids };
+        let any_data = false;
         for (let prot of res) {
           let msdatas = prot.data.filter( dat => (dat.metadata || {}).mimetype == 'application/json+msdata');
-          dm_result.proteins.push(summarise_msdata(msdatas));
+          let summarised = summarise_msdata(msdatas);
+          dm_result.proteins.push(summarised);
+          if ( summarised.composition.length > 0 || summarised.sources.length > 0 || summarised.sites.length > 0) {
+            any_data = true;
+          }
+        }
+        if ( res.length > 0 && ! any_data ) {
+          dm_result.error = 'NO_SITEDATA';
         }
         return dm_result;
       });
     }));
   });
 };
-
 
 const handle_event = function(event) {
   if (event.tweet_create_events) {

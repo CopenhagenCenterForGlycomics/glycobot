@@ -17,7 +17,7 @@ module.exports = function(config) {
   **/
   methods._prepareRequest = function(body) {
     let requestOptions = {
-      url: config.app.twitter_endpoint,
+      url: config.app.dm_endpoint,
       oauth: config.oauth,
       json: true,
       headers: {
@@ -79,9 +79,32 @@ module.exports = function(config) {
         }
         resp_promises.push(methods.sendMessage(dm_body(resp.message,resp.source.message_create.sender_id)));
       }
+      if (resp.type === 'tweet') {
+        if (resp.source.user.id_str === process.env.TWITTER_SELF_ID) {
+          console.log('Do not send tweet to self');
+          return;
+        }
+        resp_promises.push(methods.sendTweet(resp.message,resp.source.id_str));
+      }
     }
     return Promise.all(resp_promises);
   };
+
+  methods.sendTweet = (message,id) => new Promise((resolve, reject) => {
+    let opts = {
+      url: config.app.tweet_endpoint,
+      oauth: config.oauth
+    };
+    // Send the message
+    request.post(opts, function(error, response, body) {
+      if (!error) {
+        resolve(response);
+      } else {
+        reject(error);
+      }
+    });
+  });
+
 
   /**
    * Send direct Twitter message

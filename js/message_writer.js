@@ -33,7 +33,7 @@ const handle_protein = (id,prot) => {
 };
 
 const handle_single = (response) => {
- if (response.type == 'dm') {
+ if (response.type == 'dm' || response.type == 'tweet') {
     if (response.error == 'NO_GENE') {
       response.message = 'I didn\'t recognise any gene names';
       return [ response ];

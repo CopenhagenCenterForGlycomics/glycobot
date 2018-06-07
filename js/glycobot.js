@@ -121,37 +121,52 @@ const understand_query = (text) => {
   return [];
 };
 
-const handle_tweets = () => {};
+const handle_tweets = (tweets) => {
+  if (tweets[0].in_reply_to_user_id_str === process.env.TWITTER_SELF_ID) {
+    console.log('Do not reply to replies to self');
+    return Promise.resolve([]);
+  }
+  if (tweets[0].retweeted_status) {
+    console.log('Do not do anything with retweets');
+    return Promise.resolve([]);
+  }
+  return handle_messages({ message: tweets[0], source: tweets[0] },'tweet');
+};
 
 const handle_dms = (dms) => {
+  let message_objs = dms.map( dm => {message: dm.message_create.message_data, source: dm } );
+  return handle_messages(message_objs,'dm');
+};
+
+const handle_messages = (messages,type) => {
   return has_symbols.then( () => {
     let results = [];
-    return Promise.all( dms.map( dm => {
-      let text = dm.message_create.message_data.text;
+    return Promise.all( messages.map( message => {
+      let text = message.message.text;
       let ids = understand_query(text);
       console.log('Understood',ids,'from query');
       let uniprots = ids.map( id => id.uniprot );
       ids = ids.filter( (o,i,a) => uniprots.indexOf(o.uniprot) === i );
 
       if (ids.length === 0) {
-        return Promise.resolve({ source: dm, type: 'dm', error: 'NO_GENE' });
+        return Promise.resolve({ source: message, type: type, error: 'NO_GENE' });
       }
 
       return getData(ids.map( id => id.uniprot )).then( res => {
-        let dm_result = { source: dm, type: 'dm', proteins: [], ids: ids };
+        let result = { source: message, type: type, proteins: [], ids: ids };
         let any_data = false;
         for (let prot of res) {
           let msdatas = prot.data.filter( dat => (dat.metadata || {}).mimetype == 'application/json+msdata');
           let summarised = summarise_msdata(msdatas);
-          dm_result.proteins.push(summarised);
+          result.proteins.push(summarised);
           if ( summarised.composition.length > 0 || summarised.sources.length > 0 || summarised.sites.length > 0) {
             any_data = true;
           }
         }
         if ( res.length > 0 && ! any_data ) {
-          dm_result.error = 'NO_SITEDATA';
+          result.error = 'NO_SITEDATA';
         }
-        return dm_result;
+        return result;
       });
     }));
   });

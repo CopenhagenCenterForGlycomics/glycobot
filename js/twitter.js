@@ -55,18 +55,22 @@ module.exports = function(config) {
   }
   }`);
 
+  let send_reply = (resp) => {
+    if (resp.type === 'dm') {
+      return methods.sendMessage(dm_body(resp.message,resp.source.source.message_create.sender_id));
+    }
+    if (resp.type === 'tweet') {
+      return methods.sendTweet(resp.message,resp.source.id_str);
+    }
+  };
+
 
   methods.sendReplies = (responses) => {
-    let resp_promises = [];
-    for (let resp of responses) {
-      if (resp.type === 'dm') {
-        resp_promises.push(methods.sendMessage(dm_body(resp.message,resp.source.message_create.sender_id)));
-      }
-      if (resp.type === 'tweet') {
-        resp_promises.push(methods.sendTweet(resp.message,resp.source.id_str));
-      }
+    let resp = responses.shift();
+    if ( ! resp ) {
+      return Promise.resolve();
     }
-    return Promise.all(resp_promises);
+    return send_reply(resp).then( () => sendReplies(responses) );
   };
 
   methods.sendTweet = (message,id) => new Promise((resolve, reject) => {

@@ -16,7 +16,36 @@ const config = {
   }
 };
 
+const filter_self_tweets = (tweets,screen_name) => tweets.filter( tweet => tweet.user.screen_name !== screen_name );
+
+const filter_self_dms = (dms,screen_name) => dms.filter( dm => (! dm.message_create) || dm.message_create.user.screen_name !== screen_name);
+
+
+const filter_self_event = (event,screen_name) => {
+  if (event.tweet_create_events) {
+    event.tweet_create_events = filter_self_tweets(event.tweet_create_events,screen_name);
+    if (event.tweet_create_events.length < 1) {
+      console.log('Filtered out self tweets');
+      delete event.tweet_create_events;
+    }
+  }
+  if (event.direct_message_events) {
+    event.direct_message_events.forEach( dm => {
+      if (dm.message_create) {
+        dm.message_create.user = event.users[dm.sender_id];
+      }
+    });
+    event.direct_message_events = filter_self_dms(event.direct_message_events,screen_name);
+    if (event.direct_message_events.length < 1) {
+      console.log('Filtered out self DM events');
+      delete event.direct_message_events;
+    }
+  }
+  return event;
+};
+
 const pipeline = (event) => {
+  event = filter_self_event(event,'o_fuc_man');
   return glycobot(event).then( writer );
 };
 

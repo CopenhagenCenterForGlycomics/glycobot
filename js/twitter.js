@@ -73,17 +73,9 @@ module.exports = function(config) {
     let resp_promises = [];
     for (let resp of responses) {
       if (resp.type === 'dm') {
-        if (resp.source.message_create.sender_id === process.env.TWITTER_SELF_ID) {
-          console.log('Do not send to self');
-          return;
-        }
         resp_promises.push(methods.sendMessage(dm_body(resp.message,resp.source.message_create.sender_id)));
       }
       if (resp.type === 'tweet') {
-        if (resp.source.user.id_str === process.env.TWITTER_SELF_ID) {
-          console.log('Do not send tweet to self');
-          return;
-        }
         resp_promises.push(methods.sendTweet(resp.message,resp.source.id_str));
       }
     }

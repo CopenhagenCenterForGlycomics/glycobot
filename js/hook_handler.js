@@ -1,6 +1,7 @@
 // Function for sending twitter DMs
 const twitter = require('./twitter');
 
+const pipeline = require('./glycobot_pipeline');
 
 const config = {
   oauth: {
@@ -17,12 +18,10 @@ const config = {
   }
 };
 
-const glycobot_pipeline = require('./glycobot_pipeline');
-
 
 /**
- * Webhook handler for incoming Twitter DMs
- * @function twitterWebhook
+ * Webhook handler for incoming Twitter events
+ * @function hook
  * @param {Object} event - AWS Lambda event object
  * @param {Object} context - AWS Lambda context object
  * @param {Function} callback - Callback
@@ -63,8 +62,8 @@ module.exports.hook = (event, context, callback) => {
       throw new Error('Invalid CRC');
     }).then( twitter_event => {
       console.log(JSON.stringify(twitter_event));
-      return glycobot_pipeline(twitter_event)
+      return pipeline(twitter_event)
       .then( res => callback(null,res) );
-    }).catch( err => callback );
+    }).catch( err => callback(err) );
   }
 };

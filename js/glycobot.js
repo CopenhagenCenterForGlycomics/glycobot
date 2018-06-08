@@ -121,13 +121,42 @@ const understand_query = (text) => {
   return [];
 };
 
-const handle_tweets = (tweets) => {
-  if (tweets[0].in_reply_to_user_id_str === process.env.TWITTER_SELF_ID) {
-    console.log('Do not reply to replies to self');
-    return Promise.resolve([]);
+const should_reply_to = (tweet) => {
+
+  // Tweet replies
+  if ( tweet.in_reply_to_status_id_str ) {
+    if (tweet.in_reply_to_screen_name === 'o_fuc_man') {
+      // Do not respond to tweets replying to a tweet we made
+      return false;
+    }
+    // If we have been mentioned in a reply, we should reply
+    return true;
   }
-  if (tweets[0].retweeted_status) {
-    console.log('Do not do anything with retweets');
+
+  // Quote tweets
+  if ( tweet.quoted_status ) {
+    if ( tweet.in_reply_to_screen_name === 'o_fuc_man' ) {
+      // We should think about hoisting the quoted text?
+      return true;
+    }
+    if (tweet.entities.user_mentions.filter( u => u.screen_name === 'o_fuc_man').length > 0) {
+      // We should think about hoisting the quoted text?
+      return true;
+    }
+    return false;
+  }
+
+  // Retweets
+  if ( tweet.retweeted_status ) {
+    // We do not respond to anyone retweeting our replies
+    return false;
+  }
+
+  return true;
+};
+
+const handle_tweets = (tweets) => {
+  if ( ! should_reply_to(tweets[0])) {
     return Promise.resolve([]);
   }
   return handle_messages({ message: tweets[0], source: tweets[0] },'tweet');

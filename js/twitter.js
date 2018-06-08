@@ -55,22 +55,28 @@ module.exports = function(config) {
   }
   }`);
 
-  let send_reply = (resp) => {
+  let send_reply = (resp,alt_id) => {
     if (resp.type === 'dm') {
-      return methods.sendMessage(dm_body(resp.message,resp.source.source.message_create.sender_id));
+      return methods.sendMessage(dm_body(resp.message,resp.source.source.message_create.sender_id)).then( () => null );
     }
     if (resp.type === 'tweet') {
-      return methods.sendTweet(resp.message,resp.source.id_str);
+      return methods.sendTweet(resp.message,alt_id ? alt_id : resp.source.source.id_str).then( resp => {
+        return JSON.parse(resp.body).id_str;
+      });
     }
   };
 
 
-  methods.sendReplies = (responses) => {
+  methods.sendReplies = (responses,alt_id=null) => {
+    console.log('We have ',responses.length,'responses to send');
     let resp = responses.shift();
     if ( ! resp ) {
       return Promise.resolve();
     }
-    return send_reply(resp).then( () => sendReplies(responses) );
+    return send_reply(resp,alt_id).then( (last_id) => {
+      console.log('We have ',responses.length,'remaining responses to send');
+      return methods.sendReplies(responses,last_id);
+    });
   };
 
   methods.sendTweet = (message,id) => new Promise((resolve, reject) => {

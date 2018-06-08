@@ -58,6 +58,7 @@
         "Description": "Twitter webhook consumer",
         "FunctionName": "twitterWebhook",
         "Handler": "index.twitterWebhook",
+        "Timeout" : 300,
         "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"]},
         "Environment": {
           "Variables": {

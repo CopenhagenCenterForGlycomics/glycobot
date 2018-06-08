@@ -55,19 +55,6 @@ module.exports = function(config) {
   }
   }`);
 
-  const tweet_body = (message,parent) => JSON.parse(`{
-  "event": {
-    "type": "message_create",
-    "message_create": {
-      "target": {
-        "recipient_id": "${parent}"
-      },
-      "message_data": {
-        "text": "${message}",
-      }
-    }
-  }
-  }`);
 
   methods.sendReplies = (responses) => {
     let resp_promises = [];
@@ -86,7 +73,7 @@ module.exports = function(config) {
     let opts = {
       url: config.app.tweet_endpoint,
       oauth: config.oauth,
-      qs: { message: message, in_reply_to: id }
+      qs: { status: message, in_reply_to_status_id: id, auto_populate_reply_metadata: 'true' }
     };
     // Send the message
     request.post(opts, function(error, response, body) {

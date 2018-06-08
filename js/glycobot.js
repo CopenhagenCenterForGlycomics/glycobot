@@ -5,7 +5,7 @@ const zlib = require('zlib');
 const readline = require('readline');
 const getData = require('./gator');
 
-const SELF_USER_NAME = process.env.TWITTERSELFID;
+const SELF_USER_NAME = process.env.TWITTER_SELF_ID;
 
 const summarise_msdata = (msdatas) => {
   let compositions = [];

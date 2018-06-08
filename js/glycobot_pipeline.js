@@ -2,7 +2,7 @@ const glycobot = require('./glycobot');
 const twitter = require('./twitter');
 const writer = require('./message_writer');
 
-const SELF_USER_NAME = process.env.TWITTERSELFID;
+const SELF_USER_NAME = process.env.TWITTER_SELF_ID;
 
 const config = {
   oauth: {

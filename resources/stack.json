@@ -31,12 +31,12 @@
       "NoEcho": "true",
       "Type": "String",
       "Default": "",
-      "Description": "GATOR API key"      
+      "Description": "GATOR API key"
     },
     "TWITTERSELFID" : {
       "Type" : "String",
       "Default" : "",
-      "Description" : "Own Twitter user id"
+      "Description" : "Own Twitter user name"
     }
   },
   "Resources": {

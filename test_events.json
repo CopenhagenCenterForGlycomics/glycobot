@@ -1,4 +1,4 @@
-{
+[{
     "for_user_id": "875441565895991298",
     "tweet_create_events": [
         {
@@ -86,7 +86,7 @@
             "timestamp_ms": "1528401696829"
         }
     ]
-}
+},
 {
     "for_user_id": "875441565895991298",
     "tweet_create_events": [
@@ -164,7 +164,7 @@
             "timestamp_ms": "1528401788690"
         }
     ]
-}
+},
 {
     "for_user_id": "875441565895991298",
     "tweet_create_events": [
@@ -325,7 +325,7 @@
             "timestamp_ms": "1528401839220"
         }
     ]
-}
+},
 {
     "for_user_id": "875441565895991298",
     "tweet_create_events": [
@@ -497,8 +497,7 @@
             "timestamp_ms": "1528401882626"
         }
     ]
-}
-
+},
 {
     "for_user_id": "875441565895991298",
     "tweet_create_events": [
@@ -681,7 +680,7 @@
             "timestamp_ms": "1528402316736"
         }
     ]
-}
+},
 {
     "for_user_id": "875441565895991298",
     "tweet_create_events": [
@@ -689,7 +688,7 @@
             "created_at": "Thu Jun 07 20:21:50 +0000 2018",
             "id": 1004820749641834500,
             "id_str": "1004820749641834498",
-            "text": "Ref @o_fuc_man https://t.co/0BUpbma0LP",
+            "text": "Ref @o_fuc_man CDH1 https://t.co/0BUpbma0LP",
             "display_text_range": [
                 0,
                 14
@@ -864,8 +863,7 @@
             "timestamp_ms": "1528402910038"
         }
     ]
-}
-
+},
 {
     "for_user_id": "875441565895991298",
     "tweet_create_events": [
@@ -958,4 +956,4 @@
             "timestamp_ms": "1528402466678"
         }
     ]
-}
+}]

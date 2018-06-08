@@ -5,6 +5,8 @@ const zlib = require('zlib');
 const readline = require('readline');
 const getData = require('./gator');
 
+const SELF_USER_NAME = process.env.TWITTERSELFID;
+
 const summarise_msdata = (msdatas) => {
   let compositions = [];
   let sources = [];
@@ -29,7 +31,7 @@ const summarise_msdata = (msdatas) => {
         a_comp = all_comp;
       }
     });
-    if (! a_comp.match(/Hex|GlcNAc/)) {
+    if (! a_comp.match(/Hex|GlcNAc|Fuc|Xyl/)) {
       continue;
     }
     let source = null;
@@ -39,7 +41,7 @@ const summarise_msdata = (msdatas) => {
         source = sample.description;
       }
       if (sample.cell_type) {
-        source = sample.cell_type + ' ('+source+')';
+        source = sample.cell_type + ' (cells from '+source+')';
       }
     }
     if (sources.indexOf(source) < 0) {
@@ -47,7 +49,7 @@ const summarise_msdata = (msdatas) => {
     }
 
   }
-  compositions = compositions.filter( comp => comp.match(/Hex|GlcNAc/));
+  compositions = compositions.filter( comp => comp.match(/Hex|GlcNAc|Fuc|Xyl/));
   let is_sugar = compositions.length > 0;
   return { composition: compositions, sources: sources, sites: idxes };
 };
@@ -106,6 +108,9 @@ let has_symbols = new Promise( resolve => {
 });
 
 const understand_query = (text) => {
+  const url_expression = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+  const url_regex = new RegExp(url_expression);
+  text = text.replace(url_regex,'');
   text = text.replace(/\s+(\d+)/g,"$1");
 
   let parsed = nlp(text);
@@ -122,11 +127,11 @@ const understand_query = (text) => {
 };
 
 const should_reply_to = (tweet) => {
-
   // Tweet replies
   if ( tweet.in_reply_to_status_id_str ) {
-    if (tweet.in_reply_to_screen_name === 'o_fuc_man') {
+    if (tweet.in_reply_to_screen_name === SELF_USER_NAME) {
       // Do not respond to tweets replying to a tweet we made
+      console.log('Not replying to tweet ',tweet.text);
       return false;
     }
     // If we have been mentioned in a reply, we should reply
@@ -135,20 +140,22 @@ const should_reply_to = (tweet) => {
 
   // Quote tweets
   if ( tweet.quoted_status ) {
-    if ( tweet.in_reply_to_screen_name === 'o_fuc_man' ) {
+    if ( tweet.in_reply_to_screen_name === SELF_USER_NAME ) {
       // We should think about hoisting the quoted text?
       return true;
     }
-    if (tweet.entities.user_mentions.filter( u => u.screen_name === 'o_fuc_man').length > 0) {
+    if (tweet.entities.user_mentions.filter( u => u.screen_name === SELF_USER_NAME).length > 0) {
       // We should think about hoisting the quoted text?
       return true;
     }
+    console.log('Not replying to quote tweet',tweet.text);
     return false;
   }
 
   // Retweets
   if ( tweet.retweeted_status ) {
     // We do not respond to anyone retweeting our replies
+    console.log('Not replying to retweet',tweet.text);
     return false;
   }
 
@@ -159,11 +166,12 @@ const handle_tweets = (tweets) => {
   if ( ! should_reply_to(tweets[0])) {
     return Promise.resolve([]);
   }
-  return handle_messages({ message: tweets[0], source: tweets[0] },'tweet');
+  console.log('Replying to ',tweets[0].text);
+  return handle_messages([{ message: tweets[0], source: tweets[0] }],'tweet');
 };
 
 const handle_dms = (dms) => {
-  let message_objs = dms.map( dm => {message: dm.message_create.message_data, source: dm } );
+  let message_objs = dms.map( dm => { return {message: dm.message_create.message_data, source: dm }; });
   return handle_messages(message_objs,'dm');
 };
 
@@ -173,7 +181,13 @@ const handle_messages = (messages,type) => {
     return Promise.all( messages.map( message => {
       let text = message.message.text;
       let ids = understand_query(text);
-      console.log('Understood',ids,'from query');
+      if (ids.length < 1 && message.message.quoted_status) {
+        console.log(`No ids identified, trying quoted tweet text "${message.message.quoted_status.text}"`);
+        ids = understand_query(message.message.quoted_status.text);
+      }
+      if (ids.length > 0) {
+        console.log('Understood',ids,'from query');
+      }
       let uniprots = ids.map( id => id.uniprot );
       ids = ids.filter( (o,i,a) => uniprots.indexOf(o.uniprot) === i );
 
@@ -208,6 +222,7 @@ const handle_event = function(event) {
   if (event.direct_message_events) {
     return handle_dms(event.direct_message_events);
   }
+  return Promise.resolve([]);
 };
 
 const test_strings = [

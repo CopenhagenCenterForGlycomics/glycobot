@@ -1,15 +1,21 @@
 
+const sentence = (arr) => {
+  return arr.slice(0, -2).join(', ') +
+    (arr.slice(0, -2).length ? ', ' : '') +
+    arr.slice(-2).join(' & ');
+};
+
 const handle_family = (ids,prots) => {
   let with_glyco = prots.filter( prot => prot.sites.length > 0 || prot.composition.length > 0 );
-  let family_symbols = ids.map( id => id.symbol ).slice(0,5).join(',');
+  let family_symbols = sentence(ids.map( id => id.symbol ).slice(0,5));
   if ((with_glyco.length / prots.length) < 0.25) {
-    return `For the family including ${family_symbols}, only a few proteins have sugars: ${with_glyco.length} out of ${prots.length}`;
+    return `For the family including ${family_symbols} only a few proteins have sugars: ${with_glyco.length}/${prots.length} do`;
   }
   if ((with_glyco.length / prots.length) <= 0.5) {
-    return `For the family including ${family_symbols}, there are some proteins with sugars: ${with_glyco.length} out of ${prots.length}`;
+    return `For the family including ${family_symbols} there are some proteins with sugars: ${with_glyco.length}/${prots.length} do`;
   }
   if ((with_glyco.length / prots.length) > 0.5) {
-    return `For the family including ${family_symbols}, there are a few proteins with sugars! ${with_glyco.length} out of ${prots.length}`;
+    return `For the family including ${family_symbols}, there are a few proteins with sugars! ${with_glyco.length}/${prots.length} do`;
   }
 };
 
@@ -23,13 +29,13 @@ const handle_protein = (id,prot) => {
   let has_tn = composition.filter( comp => comp.match(/^HexNAc/) ).length > 0;
   let has_nlinked = composition.filter( comp => comp.match(/^GlcNAc\(b1-4\)/) ).length > 0;
   let has_oman = composition.filter( comp => comp.match(/^Hex$/) ).length > 0;
-  let comp_statement = [ has_t ? 'Core 1 O-GalNAc' : '',
-                         has_tn ? 'Truncated O-GalNAc' : '' ,
+  let comp_statement = sentence([ has_t ? 'Core 1 O-GalNAc' : '',
+                         has_tn ? 'truncated O-GalNAc' : '' ,
                          has_nlinked ? 'N-Linked glycans' : '',
-                         has_oman ? 'O-Mannose' : '' ].join(',').trim().replace(/,,+/g,',');
-  let source_statement = prot.sources.join(',');
+                         has_oman ? 'O-Mannose' : '' ].filter( t => t));
+  let source_statement = sentence(prot.sources.filter( t => t));
 
-  return `I checked the protein for ${id.symbol} (${id.uniprot}), and there are ${site_statement}, ${comp_statement ? 'with '+comp_statement : ''}, based on data from ${source_statement}`;
+  return `I checked the protein for ${id.symbol} (${id.uniprot}): There are ${site_statement} ${comp_statement ? 'with '+comp_statement : ''} based on data from ${source_statement}`;
 };
 
 const handle_single = (response) => {
@@ -49,7 +55,7 @@ const handle_single = (response) => {
     }
     if (response.proteins.length == 1) {
       response.message = handle_protein(response.ids[0],response.proteins[0]);
-      gdv_link_resp = { type: 'dm', source: response.source, message: `Full data at: https://glycodomain.glycomics.ku.dk/uniprot/${response.ids[0].uniprot}`}
+      gdv_link_resp = { type: response.type, source: response.source, message: `Full data at: https://glycodomain.glycomics.ku.dk/uniprot/${response.ids[0].uniprot}`}
       return [ response, gdv_link_resp ];
     }
     if (response.proteins.length == 0) {
@@ -62,7 +68,6 @@ const handle_single = (response) => {
 const handle = (responses) => {
   let mapped_responses = responses.map( handle_single );
   let all_responses = [].concat.apply([],mapped_responses);
-  console.log(all_responses);
   return all_responses;
 };
 

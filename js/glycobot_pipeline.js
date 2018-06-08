@@ -57,7 +57,7 @@ const pipeline_with_reply = (event) => {
   .then( (resp) => twitter(config).sendReplies(resp) );
 };
 
-let message_text = 'Type I classical cadherins';
+let message_text = 'DAG1';
 
 let message = {
 "for_user_id":"17054080",

@@ -20,7 +20,7 @@ const handle_family = (ids,prots) => {
 };
 
 const handle_protein = (id,prot) => {
-  let site_statement = prot.sites.length >= 20 ? 'lots of sites' : 'a few sites';
+  let site_statement = prot.sites.length >= 20 ? 'lots' : 'a bit';
   if (prot.sites.length == 0) {
     site_statement = 'no sites';
   }
@@ -33,9 +33,18 @@ const handle_protein = (id,prot) => {
                          has_tn ? 'truncated O-GalNAc' : '' ,
                          has_nlinked ? 'N-Linked glycans' : '',
                          has_oman ? 'O-Mannose' : '' ].filter( t => t));
-  let source_statement = sentence(prot.sources.filter( t => t));
 
-  return `I checked the protein for ${id.symbol} (${id.uniprot}): There are ${site_statement} ${comp_statement ? 'with '+comp_statement : ''} based on data from ${source_statement}`;
+  let source_simple = sentence(prot.sources.filter( t => t));
+  if (source_simple.length > 100) {
+    source_simple = sentence(prot.sources.filter( t => t).map( s => s.replace(/\s+\(.*\)/,'') ));
+  }
+  if (source_simple.length > 100) {
+    let total_sources = prot.sources.length;
+    source_simple = sentence(prot.sources.slice(0,5).filter( t => t).map( s => s.replace(/\s+\(.*\)/,'') ))+` of ${total_sources} sources`;
+  }
+  let source_statement = source_simple;
+
+  return `I checked ${id.symbol}: There is ${site_statement} of glyco ${comp_statement ? 'with '+comp_statement : ''} based on data from ${source_statement}`;
 };
 
 const handle_single = (response) => {

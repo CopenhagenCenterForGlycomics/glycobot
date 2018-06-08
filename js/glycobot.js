@@ -26,11 +26,15 @@ const summarise_msdata = (msdatas) => {
         }
       }
       let all_comp = (pep.composition || [''])[0].replace(/\d+x/,'');
+      if (all_comp) {
+        a_comp = all_comp;
+      }
       if (all_comp && compositions.indexOf(all_comp) < 0) {
         compositions.push(all_comp);
         a_comp = all_comp;
       }
     });
+
     if (! a_comp.match(/Hex|GlcNAc|Fuc|Xyl/)) {
       continue;
     }

@@ -85,7 +85,8 @@ module.exports = function(config) {
   methods.sendTweet = (message,id) => new Promise((resolve, reject) => {
     let opts = {
       url: config.app.tweet_endpoint,
-      oauth: config.oauth
+      oauth: config.oauth,
+      qs: { message: message, in_reply_to: id }
     };
     // Send the message
     request.post(opts, function(error, response, body) {

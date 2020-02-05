@@ -11,8 +11,18 @@ You'll get a webhook ID as a result of this. If you want to get the webhook ID a
 twurl '/1.1/account_activity/all/webhooks.json'
 ```
 
-Then, as the user that is being the bot (assuming a prod environment):
+If, for whatever reason you need to re-validated the webhook you do
+
+```
+twurl '/1.1/account_activity/all/prod/webhooks/$WEBHOOKID.json'
+```
+
+
+To subscribe the user that is being the bot (assuming a twitter environment called prod):
 
 ```
 twurl -X POST '/1.1/account_activity/all/prod/subscriptions.json'
 ```
+
+
+
